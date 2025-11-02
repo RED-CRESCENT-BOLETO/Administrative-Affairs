@@ -33,8 +33,8 @@
     width: 100%; padding: 8px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc;
     text-align: right; font-size: 15px;
   }
-  .time-group { display: flex; gap: 10px; }
-  .time-group input, .time-group select { flex: 1; }
+  .hint { font-size: 13px; color: #555; margin-top: 6px; }
+
   button.generate {
     margin-top: 15px; padding: 10px 20px; background-color: #8B0000; color: white;
     border: none; border-radius: 10px; cursor: pointer; font-size: 16px; width: 100%;
@@ -119,15 +119,8 @@
     <input type="number" id="int_vac_duration" placeholder="عدد الساعات">
     <label>الرصيد المتبقي (بالساعات):</label>
     <input type="number" id="int_vac_balance" placeholder="عدد الساعات">
-    <label>وقت بدء الإجازة:</label>
-    <div class="time-group">
-      <input type="number" id="int_vac_startHour" placeholder="الساعة (1-12)">
-      <input type="number" id="int_vac_startMinute" placeholder="الدقيقة (0-59)">
-      <select id="int_vac_startPeriod">
-        <option value="ص">صباحًا</option>
-        <option value="م">مساءً</option>
-      </select>
-    </div>
+    <div class="hint">⏱️ سيتم ضبط وقت بدء الإجازة تلقائيًا بعد <b>5 دقائق</b> من الضغط على “إنشاء القرار” (توقيت مكة المكرمة).</div>
+
     <button class="generate" onclick="generateInternalLeave()">إنشاء القرار</button>
     <button class="generate" onclick="copyInternalLeave()">نسخ القرار</button>
     <pre id="int_output"></pre>
@@ -276,50 +269,38 @@
 function showForm(id){
   document.querySelectorAll('.form-section').forEach(f => f.style.display='none');
   document.getElementById(id).style.display='block';
-  // إخفاء اللوحة عند تغيير القسم
   hideQuickPanel();
 }
 
 // ---------- الإجازة الداخلية ----------
+// الآن: ضبط وقت البدء تلقائيًا بعد 5 دقائق بتوقيت مكة
 function generateInternalLeave(){
   let copyUser = document.getElementById("int_copyUser").value.trim();
   let duration = parseFloat(document.getElementById("int_vac_duration").value) || 0;
-  let balance = parseFloat(document.getElementById("int_vac_balance").value) || 0;
-  let startHour = parseInt(document.getElementById("int_vac_startHour").value);
-  let startMinute = parseInt(document.getElementById("int_vac_startMinute").value);
-  let period = document.getElementById("int_vac_startPeriod").value;
+  let balance  = parseFloat(document.getElementById("int_vac_balance").value) || 0;
 
-  if (!startHour || startHour < 1 || startHour > 12) return alert("⚠️ الرجاء إدخال ساعة صحيحة (1 - 12)");
-  if (isNaN(startMinute) || startMinute < 0 || startMinute > 59) return alert("⚠️ الرجاء إدخال دقيقة صحيحة (0 - 59)");
-
-  if (period === "م" && startHour < 12) startHour += 12;
-  if (period === "ص" && startHour === 12) startHour = 0;
-
-  let tzDate = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));
-  let yyyy = tzDate.getFullYear();
-  let mm = String(tzDate.getMonth()+1).padStart(2,'0');
-  let dd = String(tzDate.getDate()).padStart(2,'0');
-
-  let startDate = new Date(`${yyyy}-${mm}-${dd}T${String(startHour).padStart(2,'0')}:${String(startMinute).padStart(2,'0')}:00`);
-  let endDate = new Date(startDate);
-  endDate.setHours(endDate.getHours()+duration);
+  // وقت مكة الآن
+  const tzNow = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));
+  // ابدأ بعد 5 دقائق من الضغط على إنشاء القرار
+  const startDate = new Date(tzNow.getTime() + 5 * 60 * 1000);
+  // نهاية الإجازة بحسب الساعات
+  const endDate   = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
 
   function formatDate(date){
-    let y=date.getFullYear();
-    let m=String(date.getMonth()+1).padStart(2,'0');
-    let d=date.getDate();
-    let h=date.getHours();
-    let min=String(date.getMinutes()).padStart(2,'0');
-    let per=h>=12?"م":"ص";
-    h=h%12; h=h?h:12;
-    return `${h}:${min} ${per} | ${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}`;
+    const y = date.getFullYear();
+    const m = String(date.getMonth()+1).padStart(2,'0');
+    const d = String(date.getDate()).padStart(2,'0');
+    let h   = date.getHours();
+    const min = String(date.getMinutes()).padStart(2,'0');
+    const per = h >= 12 ? "م" : "ص";
+    h = h % 12; h = h ? h : 12;
+    return `${h}:${min} ${per} | ${y}/${m}/${d}`;
   }
 
   if(copyUser && !copyUser.startsWith("<@")) copyUser=`<@${copyUser}>`;
+  const remaining = balance - duration;
 
-  let remaining = balance - duration;
-
-  let result=`﷽
+  const result=`﷽
 
 **قرار صـادر مـن <@&1071933369698496532>**
 
@@ -346,23 +327,23 @@ function generateInternalLeave(){
   // إظهار نموذج الإجازة الداخلية فقط
   showQuickTemplates('internalLeave');
 }
-function copyInternalLeave(){navigator.clipboard.writeText(document.getElementById("int_output").textContent); alert("✅ تم نسخ القرار بنجاح!");}
+function copyInternalLeave(){
+  navigator.clipboard.writeText(document.getElementById("int_output").textContent);
+  alert("✅ تم نسخ القرار بنجاح!");
+}
 
 // ---------- الاستقالة ----------
-// خرائط ديناميكية
 function getResignationTemplatesByLevel(level){
   if(level === 'متدرب'){ return [{ key: 'سفلة', label: 'صيغة الاستقالة للمتدرب' }]; }
   if(level === 'مستوى 1'){ return [{ key: 'رفض', label: 'صيغة الاستقالة لمستوى 1' }]; }
   if(level === 'مستوى 2 فما فوق'){ return [{ key: 'قبولاستقالة', label: 'صيغة قبول الاستقالة' }]; }
   return [];
 }
-
 function updateResFields(){
   const level = document.getElementById('res_level').value;
   document.getElementById('res_violationsField').style.display = (level==='مستوى 2 فما فوق') ? 'block' : 'none';
   if(level){ showQuickTemplates('resignation', { level }); } else { hideQuickPanel(); }
 }
-
 function generateResignation(){
   const level=document.getElementById('res_level').value;
   const nameCode=document.getElementById('res_nameCode').value.trim();
@@ -427,17 +408,17 @@ function generateResignation(){
   document.getElementById('res_output').textContent=result;
   showQuickTemplates('resignation', { level: document.getElementById('res_level').value });
 }
-function copyResignation(){navigator.clipboard.writeText(document.getElementById('res_output').textContent); alert("✅ تم نسخ القرار بنجاح!");}
+function copyResignation(){
+  navigator.clipboard.writeText(document.getElementById('res_output').textContent);
+  alert("✅ تم نسخ القرار بنجاح!");
+}
 
 // ---------- إجازة خارجية ----------
-// خريطة صيغ الخارجية بحسب النوع
 function getExternalTemplatesByType(type){
   if(type === 'اجازة خارجية'){ return [{ key: 'خارجية', label: 'صيغة الإجازة الخارجية' }]; }
   if(type === 'انتهاء اجازة خارجية'){ return [{ key: 'عودةخارجية', label: 'صيغة العودة من إجازة خارجية' }]; }
-  // تمديد: لا يوجد نموذج مخصص حتى الآن
   return [];
 }
-
 function updateExtForm(){
   const type=document.getElementById('ext_leaveType').value;
   const daysField = document.getElementById('ext_leaveDaysField');
@@ -447,7 +428,6 @@ function updateExtForm(){
   extField.style.display    = (type==='تمديد اجازة خارجية') ? 'block' : 'none';
   if (type === 'انتهاء اجازة خارجية') { daysField.style.display = 'none'; extField.style.display  = 'none'; }
 
-  // اعرض الصيغة المطابقة بحسب النوع
   if(type){ showQuickTemplates('externalLeave', { type }); } else { hideQuickPanel(); }
 }
 function formatExtDate(date){
@@ -593,11 +573,12 @@ function generateAssignment(){
 <@&1071933359086911561> 
 <@813079786855464961>    **`;
   document.getElementById('ass_output').textContent=result;
-
-  // يظهر نموذج الانتداب الديناميكي
   showQuickTemplates('assignment');
 }
-function copyAssignment(){navigator.clipboard.writeText(document.getElementById('ass_output').textContent); alert("✅ تم نسخ القرار بنجاح!");}
+function copyAssignment(){
+  navigator.clipboard.writeText(document.getElementById('ass_output').textContent);
+  alert("✅ تم نسخ القرار بنجاح!");
+}
 
 // --------- rolesRequest ---------
 function generateRoleRequest() {
@@ -718,7 +699,7 @@ https://streamable.com/
 ***عدم إلتزامك بأي بند من البنود المذكورة أعلاه يلغي شكواك .***`
 };
 
-// ======== خريطة النماذج المناسبة لكل قسم (عدا الداخلية/الخارجية الديناميكية) ========
+// ======== خريطة النماذج المناسبة لكل قسم (عدا الداخلية/الخارجية/الاستقالة الديناميكية) ========
 const quickMap = {
   internalLeave: [
     { key: 'داخلية', label: 'نموذج الإجازة الداخلية' }
