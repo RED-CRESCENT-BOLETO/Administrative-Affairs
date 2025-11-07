@@ -105,12 +105,10 @@
     <button class="tab-btn" onclick="showForm('resignation')">الاستقالة</button>
     <button class="tab-btn" onclick="showForm('externalLeave')">إجازة خارجية</button>
     <button class="tab-btn" onclick="showForm('assignment')">نموذج الانتداب</button>
-    <!-- NEW TABS ADDED -->
     <button class="tab-btn" onclick="showForm('rolesRequest')">طلب الرولات</button>
     <button class="tab-btn" onclick="showForm('ticketTemplates')">نماذج التكتات</button>
   </div>
 
-  <!-- الإجازة الداخلية -->
   <div id="internalLeave" class="form-section">
     <h3>الإجازة الداخلية</h3>
     <label>الكوبي يوزر:</label>
@@ -126,7 +124,6 @@
     <pre id="int_output"></pre>
   </div>
 
-  <!-- الاستقالة -->
   <div id="resignation" class="form-section">
     <h3>الاستقالة / إنهاء خدمات</h3>
     <label>مستوى المسعف:</label>
@@ -150,9 +147,14 @@
     <button class="generate" onclick="generateResignation()">إنشاء القرار</button>
     <button class="generate" onclick="copyResignation()">نسخ القرار</button>
     <pre id="res_output"></pre>
+    
+    <label style="margin-top: 20px; font-weight: normal; color: #8B0000;" id="res_pull_label" style="display:none;">رسالة السحب المالية:</label>
+    <pre id="res_pull_output" style="display:none; border: 1px dashed #8B0000;"></pre>
+    <button class="generate" onclick="copyResignationPull()" id="copyPullBtn" style="display:none; background-color: #555; margin-top: 5px;">
+        نسخ رسالة السحب
+    </button>
   </div>
 
-  <!-- إجازة خارجية -->
   <div id="externalLeave" class="form-section">
     <h3>إجازة خارجية</h3>
 
@@ -184,7 +186,6 @@
     <pre id="ext_output"></pre>
   </div>
 
-  <!-- نموذج الانتداب -->
   <div id="assignment" class="form-section">
     <h3>نموذج الانتداب</h3>
     <label>الكوبي ايدي:</label>
@@ -205,7 +206,6 @@
     <pre id="ass_output"></pre>
   </div>
 
-  <!-- طلب الرولات -->
   <div id="rolesRequest" class="form-section">
     <h3>طلب الرولات</h3>
     <label>الكوبي ايدي:</label>
@@ -226,7 +226,6 @@
     <pre id="role_output"></pre>
   </div>
 
-  <!-- نماذج التكتات (الصفحة الأصلية) -->
   <div id="ticketTemplates" class="form-section">
     <h3>نماذج التكتات</h3>
     <label>اختر الصيغة:</label>
@@ -258,7 +257,6 @@
   </div>
 </div>
 
-<!-- لوحة النماذج السريعة -->
 <div id="quickPanel" class="quick-panel" dir="rtl">
   <div class="quick-header">📎 نماذج التكتات المناسبة</div>
   <div id="quickList"></div>
@@ -272,17 +270,19 @@ function showForm(id){
   hideQuickPanel();
 }
 
-// ---------- الإجازة الداخلية ----------
-// الآن: ضبط وقت البدء تلقائيًا بعد 5 دقائق بتوقيت مكة
+// ---------- الإجازة الداخلية (تم تصحيح التوقيت هنا) ----------
 function generateInternalLeave(){
   let copyUser = document.getElementById("int_copyUser").value.trim();
   let duration = parseFloat(document.getElementById("int_vac_duration").value) || 0;
   let balance  = parseFloat(document.getElementById("int_vac_balance").value) || 0;
 
-  // وقت مكة الآن
+  // وقت مكة الآن (بناءً على التوقيت المحلي ثم تحويله إلى توقيت الرياض)
   const tzNow = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));
+  
   // ابدأ بعد 5 دقائق من الضغط على إنشاء القرار
-  const startDate = new Date(tzNow.getTime() + 5 * 60 * 1000);
+  // 5 دقائق * 60 ثانية * 1000 مللي ثانية
+  const startDate = new Date(tzNow.getTime() + 5 * 60 * 1000); 
+  
   // نهاية الإجازة بحسب الساعات
   const endDate   = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
 
@@ -332,7 +332,7 @@ function copyInternalLeave(){
   alert("✅ تم نسخ القرار بنجاح!");
 }
 
-// ---------- الاستقالة ----------
+// ---------- الاستقالة (تم تعديل رسالة السحب هنا) ----------
 function getResignationTemplatesByLevel(level){
   if(level === 'متدرب'){ return [{ key: 'سفلة', label: 'صيغة الاستقالة للمتدرب' }]; }
   if(level === 'مستوى 1'){ return [{ key: 'رفض', label: 'صيغة الاستقالة لمستوى 1' }]; }
@@ -349,15 +349,47 @@ function generateResignation(){
   const nameCode=document.getElementById('res_nameCode').value.trim();
   let copyId=document.getElementById('res_copyId').value.trim();
   const hasViolations=document.getElementById('res_hasViolations').value;
+  
+  // تعريف متغيرات رسائل السحب والزر
+  let pullMessage = '';
+  const pullOutputBox = document.getElementById('res_pull_output');
+  const pullLabel = document.getElementById('res_pull_label');
+  const copyPullBtn = document.getElementById('copyPullBtn');
+  
+  // إخفاء حقل السحب والزر مبدئيًا
+  pullOutputBox.style.display = 'none';
+  pullLabel.style.display = 'none';
+  copyPullBtn.style.display = 'none';
+
   if(!level) return alert('⚠️ الرجاء اختيار مستوى المسعف');
   if(!nameCode) return alert('⚠️ الرجاء إدخال اسمه وكوده الميداني');
   if(!copyId) return alert('⚠️ الرجاء إدخال الكوبي ايدي');
   if(!copyId.startsWith('<@')) copyId=`<@${copyId}>`;
   let result='';
+  
   if(level==='متدرب'||level==='مستوى 1'){
     let days=level==='متدرب'?14:7;
     let fine=level==='متدرب'?'1,000,000':'500,000';
     let reason=level==='متدرب'?'استقالة بمستوى متدرب':'استقالة بمستوى 1';
+
+    // *** منطق توليد رسالة السحب الجديدة (تم إزالة "مستوى" للمتدرب) ***
+    let amount = level === 'متدرب' ? '1,000,000' : '500,000';
+    // تم تعديل هذا السطر ليصبح: 'استقاله متدرب'
+    let type   = level === 'متدرب' ? 'استقاله متدرب' : 'استقاله مستوى 1';
+
+    pullMessage = `${copyId}
+
+${amount}
+
+   عملية سحب ناجحه  ( ${type} )`; 
+    
+    // عرض رسالة السحب وحقلها وزر النسخ
+    pullOutputBox.textContent = pullMessage;
+    pullOutputBox.style.display = 'block';
+    pullLabel.style.display = 'block';
+    copyPullBtn.style.display = 'block';
+    // **********************************
+
     result=`﷽**
 
 قرار صـادر مـن <@&1071933369698496532> 
@@ -382,6 +414,10 @@ function generateResignation(){
 <@&1071933359086911561> 
 <@813079786855464961>   **`;
   } else if(level==='مستوى 2 فما فوق'){
+    // إخفاء رسالة السحب وزر النسخ لمستوى 2 فما فوق
+    pullOutputBox.textContent = '';
+    copyPullBtn.style.display = 'none';
+    
     const violationsText=hasViolations?hasViolations:'لا';
     result=`﷽**
 
@@ -412,6 +448,17 @@ function copyResignation(){
   navigator.clipboard.writeText(document.getElementById('res_output').textContent);
   alert("✅ تم نسخ القرار بنجاح!");
 }
+// دالة النسخ المنفصلة لرسالة السحب
+function copyResignationPull(){
+  const textToCopy = document.getElementById('res_pull_output').textContent;
+  if (!textToCopy.trim()) {
+    alert("⚠️ لا يوجد نص لنسخه. قم بإنشاء القرار أولاً.");
+    return;
+  }
+  navigator.clipboard.writeText(textToCopy);
+  alert("✅ تم نسخ رسالة السحب بنجاح!");
+}
+
 
 // ---------- إجازة خارجية ----------
 function getExternalTemplatesByType(type){
@@ -676,7 +723,7 @@ const templates = {
 شاكرين لك تواصلك وتم التحقق من بياناتك وسيتم خلال الساعات القادمة إزالة منع التوظيف <:imagesremovebgpreview:1086073447840485527>`,
  "انتداب": (days=5) => `لقد تم منحك أنتداب لمدة ${days} أيام :
 
-1- يرجى الإلتزام بتاريخ العودة المدون في : https://discord.com/channels/1071933157097615480/1202354280514990212 وقم بالتفاعل بـ ✅ على الانتداب .
+1- يرجى الإلتزام بتاريخ العودة المدون في : https://discord.com/channels/1071933157097615480/1202354280514990212 و قم بالتفاعل بـ ✅ على الانتداب .
 
 2- في حال تم قبول انتدابك من قبل القطاع الثانوي ، بأمكانك تغيير وظيفتك بعد الحصول على رول منتدب.
 
@@ -794,3 +841,4 @@ function copyTemplate() {
 </script>
 </body>
 </html>
+
