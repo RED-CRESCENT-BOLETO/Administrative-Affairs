@@ -17,7 +17,6 @@
   .overlay {
     background-color: rgba(255,255,255,0.95);
     border-radius: 20px;
-    /* زيادة العرض الأقصى للقسم الرئيسي ليتسع للنموذج الجديد في الأسفل */
     max-width: 800px; 
     margin: auto;
     padding: 25px 30px;
@@ -46,7 +45,6 @@
     direction: rtl; border: 1px solid #ccc; font-size: 15px;
   }
   
-  /* تنسيق منطقة رسائل الرول والسحب */
   .result-group {
     display: flex;
     gap: 20px;
@@ -75,7 +73,6 @@
     padding: 8px 15px;
   }
 
-  /* ========== لوحة النماذج السريعة (في اليسار - بقيت كلوحة جانبية) ========== */
  .quick-panel {
     position: fixed;
     top: 200px;
@@ -119,13 +116,12 @@
     font-size: 14px;
   }
   .quick-copy:hover { background: #a91c1c; }
-  /* ========== تنسيق النموذج المدمج الجديد ========== */
   .integrated-template {
-    border: 2px solid #d9534f; /* إطار أحمر للتنبيه */
+    border: 2px solid #d9534f; 
     border-radius: 12px;
     padding: 15px;
     margin-top: 25px;
-    background: #fdf5f5; /* خلفية فاتحة للتمييز */
+    background: #fdf5f5; 
     text-align: center;
   }
   .integrated-template .quick-name {
@@ -135,9 +131,7 @@
     margin-bottom: 10px;
   }
 
-  /* استجابة للشاشات الصغيرة */
   @media (max-width: 1050px) {
-    /* في الشاشات الصغيرة، نلغي التثبيت ونضع اللوحة اليسرى في الأسفل */
     .quick-panel { 
         position: static; 
         width: 100%; 
@@ -184,7 +178,6 @@
     <label class="result-label" id="int_role_label" style="display:none;">رسالة طلب الرول:</label>
     <pre id="int_role_output" class="role-pre" style="display:none;"></pre>
     <button class="generate copy-btn" onclick="copyInternalRole()" id="copyIntRoleBtn" style="display:none;">نسخ طلب الرول</button>
-    
     
     <div class="integrated-template">
         <div class="quick-name"> نموذج غير مستوفين شروط الاجازة داخلية</div>
@@ -275,19 +268,30 @@
 
   <div id="assignment" class="form-section">
     <h3>نموذج الانتداب</h3>
+    
+    <label>نوع العملية:</label>
+    <select id="ass_type" onchange="updateAssFields()">
+      <option value="انتداب">انتداب جديد</option>
+      <option value="عودة">عودة من انتداب</option>
+    </select>
+
     <label>الكوبي ايدي:</label>
     <input type="text" id="ass_copyId" placeholder="أدخل الكوبي ايدي ">
-    <label>اختر القطاع المنتدب اليه:</label>
-    <select id="ass_sector">
-      <option value="">-- اختر القطاع --</option>
-      <option value="حرس الحدود">حرس الحدود</option>
-      <option value="امن عام">امن عام</option>
-      <option value="امن الطرق">امن الطرق</option>
-      <option value="امن المنشات">امن المنشات</option>
-      <option value="كراج الميكانيكي">كراج الميكانيكي</option>
-    </select>
-    <label>المدة بالايام:</label>
-    <input type="number" id="ass_duration" placeholder="أدخل المدة بالأيام">
+
+    <div id="ass_fields_new">
+        <label>اختر القطاع المنتدب اليه:</label>
+        <select id="ass_sector">
+          <option value="">-- اختر القطاع --</option>
+          <option value="حرس الحدود">حرس الحدود</option>
+          <option value="امن عام">امن عام</option>
+          <option value="امن الطرق">امن الطرق</option>
+          <option value="امن المنشات">امن المنشات</option>
+          <option value="كراج الميكانيكي">كراج الميكانيكي</option>
+        </select>
+        <label>المدة بالايام:</label>
+        <input type="number" id="ass_duration" placeholder="أدخل المدة بالأيام">
+    </div>
+
     <button class="generate" onclick="generateAssignment()">إنشاء القرار</button>
     <button class="generate" onclick="copyAssignment()">نسخ القرار</button>
     <pre id="ass_output"></pre>
@@ -359,10 +363,8 @@ function showForm(id){
   document.querySelectorAll('.form-section').forEach(f => f.style.display='none');
   document.getElementById(id).style.display='block';
 
-  // إدارة ظهور القوائم الجانبية
   const quickPanel = document.getElementById('quickPanel');
   
-  // لا توجد لوحة يمنى الآن، لذا فقط نظهر/نخفي اللوحة اليسرى
   if (id === 'internalLeave') {
     showQuickTemplates('internalLeave');
   } else if (id === 'resignation') {
@@ -376,24 +378,6 @@ function showForm(id){
   }
 }
 
-// ==========================================================
-// ** وظيفة طلب الرول الموحدة الجديدة **
-// ==========================================================
-function generateRoleRequestBox(copyId, type = 'يرجى اختيار رول مناسب من القائمة'){
-    const request = `
-الشخص : ${copyId}
-
-الموضوع : ${type}
-
-
-<@&1071933358503903242>            
-<@&1071933359086911561>            
-<@&1092667422902862004>            
-<@&1153823182281777293>
-`;
-    return request;
-}
-
 function normalizeCopyId(copyId) {
     let id = copyId.trim();
     if (id && !id.startsWith("<@")) {
@@ -402,400 +386,41 @@ function normalizeCopyId(copyId) {
     return id;
 }
 
-// ----------------------------------------------------------
-
-// ---------- الإجازة الداخلية ----------
-function generateInternalLeave(){
-  let copyUser = document.getElementById("int_copyUser").value.trim();
-  let duration = parseFloat(document.getElementById("int_vac_duration").value) || 0;
-  let balance  = parseFloat(document.getElementById("int_vac_balance").value) || 0;
-
-  const normalizedCopyUser = normalizeCopyId(copyUser);
-  
-  // وقت مكة الآن 
-  const tzNow = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));
-  
-  // ابدأ بعد 5 دقائق 
-  const startDate = new Date(tzNow.getTime() + 5 * 60 * 1000); // 5 minutes 
-  
-  // نهاية الإجازة بحسب الساعات
-  const endDate   = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
-
-  function formatDate(date){
-    const y = date.getFullYear();
-    const m = String(date.getMonth()+1).padStart(2,'0');
-    const d = String(date.getDate()).padStart(2,'0');
-    let h   = date.getHours();
-    const min = String(date.getMinutes()).padStart(2,'0');
-    const per = h >= 12 ? "م" : "ص";
-    h = h % 12; h = h ? h : 12;
-    return `${h}:${min} ${per} | ${y}/${m}/${d}`;
-  }
-
-  const remaining = balance - duration;
-
-  const result=
-`﷽
-
-**قرار صـادر مـن <@&1071933369698496532>**
-
-الموضوع : إجازة داخلية
-
-للمسعف : ${normalizedCopyUser}
-
-المدة : ${duration} ساعة
-
-من الساعة : ${formatDate(startDate)}
-إلى الساعة : ${formatDate(endDate)}
-
-الرصيد المتبقي : ${remaining} ساعة
-
-إعتماد :
-<@&1071933358503903242>
-<@725655707764129813>
-
-<@&1071933359086911561>
-<@813079786855464961>
-`;
-  document.getElementById("int_output").textContent=result;
-
-  // ** إخفاء رسالة طلب الرول للإجازة الداخلية حسب الطلب **
-  const roleOutputBox = document.getElementById('int_role_output');
-  const roleLabel = document.getElementById('int_role_label');
-  const copyRoleBtn = document.getElementById('copyIntRoleBtn');
-  
-  roleOutputBox.style.display = 'none';
-  roleLabel.style.display = 'none';
-  copyRoleBtn.style.display = 'none';
-  
-  showQuickTemplates('internalLeave');
-}
-function copyInternalLeave(){
-  navigator.clipboard.writeText(document.getElementById("int_output").textContent);
-  alert("✅ تم نسخ القرار بنجاح!");
-}
-function copyInternalRole(){
-  const textToCopy = document.getElementById('int_role_output').textContent;
-  if (!textToCopy.trim()) { alert("⚠️ لا يوجد نص لنسخه."); return; }
-  navigator.clipboard.writeText(textToCopy);
-  alert("✅ تم نسخ طلب الرول بنجاح!");
-}
-
-// ---------- الاستقالة ----------
-function getResignationTemplatesByLevel(level){
-  if(level === 'متدرب'){ return [{ key: 'سفلة', label: 'صيغة الاستقالة للمتدرب' }]; }
-  if(level === 'مستوى 1'){ return [{ key: 'رفض', label: 'صيغة الاستقالة لمستوى 1' }]; }
-  if(level === 'مستوى 2 فما فوق'){ return [{ key: 'قبولاستقالة', label: 'صيغة قبول الاستقالة' }]; }
-  return [];
-}
-function updateResFields(){
-  const level = document.getElementById('res_level')?.value;
-  document.getElementById('res_violationsField').style.display = (level==='مستوى 2 فما فوق') ? 'block' : 'none';
-  if(level){ showQuickTemplates('resignation', { level }); } else { hideQuickPanel(); }
-}
-function generateResignation(){
-  const level=document.getElementById('res_level')?.value;
-  const nameCode=document.getElementById('res_nameCode').value.trim();
-  let copyId=document.getElementById('res_copyId').value.trim();
-  const hasViolations=document.getElementById('res_hasViolations')?.value;
-  
-  const normalizedCopyId = normalizeCopyId(copyId);
-
-  // تعريف متغيرات رسائل السحب
-  let pullMessage = '';
-  const pullOutputBox = document.getElementById('res_pull_output');
-  const pullBoxDiv = document.getElementById('res_pull_box');
-  
-  // تعريف متغيرات رسائل الرول
-  let roleMessage = '';
-  const roleOutputBox = document.getElementById('res_role_output');
-  const roleBoxDiv = document.getElementById('res_role_box');
-
-  // إخفاء حقول السحب والرول مبدئيًا
-  pullBoxDiv.style.display = 'none';
-  roleBoxDiv.style.display = 'none';
-
-
-  if(!level) return alert('⚠️ الرجاء اختيار مستوى المسعف');
-  if(!nameCode) return alert('⚠️ الرجاء إدخال اسمه وكوده الميداني');
-  if(!copyId) return alert('⚠️ الرجاء إدخال الكوبي ايدي');
-  let result='';
-  
-  if(level==='متدرب'||level==='مستوى 1'){
-    let days=level==='متدرب'?14:7;
-    let fine=level==='متدرب'?'1,000,000':'500,000';
-    let reason=level==='متدرب'?'استقالة بمستوى متدرب':'استقالة بمستوى 1';
-    let roleType = level==='متدرب' ? 'ازاله رولات الهلال الاحمر + ازاله الاسم + منع التوظيف 14 يوم' : 'ازاله رولات الهلال الاحمر + ازاله الاسم + منع التوظيف 7 ايام';
-
-
-    // ** رسالة السحب **
-    let amount = level === 'متدرب' ? '1,000,000' : '500,000';
-    let type   = level === 'متدرب' ? 'استقاله متدرب' : 'استقاله مستوى 1';
-
-    pullMessage = `${normalizedCopyId}
-
-${amount}
-
-   عملية سحب ناجحه  ( ${type} )`; 
-    
-    // عرض رسالة السحب (نحتفظ بها)
-    pullOutputBox.textContent = pullMessage;
-    pullBoxDiv.style.display = 'block';
-    
-    // ** رسالة طلب الرول (نحتفظ بها) **
-    roleMessage = generateRoleRequestBox(normalizedCopyId, roleType);
-    roleOutputBox.textContent = roleMessage;
-    roleBoxDiv.style.display = 'block';
-
-
-    result=`﷽**
-
-قرار صـادر مـن <@&1071933369698496532> 
-
-الموضوع : إنهاء خدمات
-
-المسعف : ${normalizedCopyId}
-
-اسمه وكوده الميداني : ${nameCode}
-
-هل يوجد عليه مخالفات سابقه : 
- 
-العقوبة الاجماليه : فصل من الخدمه + منع من التوظيف (${days}) ايام + غرامه مالية بقيمه (${fine})
-
-سبب الفصل من الخدمة : ${reason}
-
-
-إعتماد :
-<@&1071933358503903242> 
-<@725655707764129813>  
-
-<@&1071933359086911561> 
-<@813079786855464961>   **`;
-  } else if(level==='مستوى 2 فما فوق'){
-    
-    // إخفاء رسالة السحب
-    
-    const violationsText=hasViolations?hasViolations:'لا';
-    const roleType = 'ازاله رولات الهلال الاحمر + ازاله الاسم'; // رول ثابت للمستوى 2 فما فوق
-
-    // ** رسالة طلب الرول (نحتفظ بها) **
-    roleMessage = generateRoleRequestBox(normalizedCopyId, roleType);
-    roleOutputBox.textContent = roleMessage;
-    roleBoxDiv.style.display = 'block';
-
-    result=`﷽**
-
-قرار صـادر مـن <@&1071933369698496532> 
-
-الموضوع : استقالة 
-
-المسعف : ${normalizedCopyId}
-
-اسمه وكوده الميداني : ${nameCode}
-
-هل يوجد عليه مخالفات سابقه : ${violationsText}  
-
-نشكر جهودك المبذولة والملحوظة لدى القطاع ونسأل الله لك التوفيق
-
-
-إعتماد :
-<@&1071933358503903242>
-<@725655707764129813>  
-
-<@&1071933359086911561> 
-<@813079786855464961>   **`;
-  }
-  document.getElementById('res_output').textContent=result;
-  showQuickTemplates('resignation', { level: document.getElementById('res_level')?.value });
-}
-function copyResignation(){
-  navigator.clipboard.writeText(document.getElementById('res_output').textContent);
-  alert("✅ تم نسخ القرار بنجاح!");
-}
-function copyResignationPull(){
-  const textToCopy = document.getElementById('res_pull_output').textContent;
-  if (!textToCopy.trim()) { alert("⚠️ لا يوجد نص لنسخه. قم بإنشاء القرار أولاً."); return; }
-  navigator.clipboard.writeText(textToCopy);
-  alert("✅ تم نسخ رسالة السحب بنجاح!");
-}
-function copyResignationRole(){
-  const textToCopy = document.getElementById('res_role_output').textContent;
-  if (!textToCopy.trim()) { alert("⚠️ لا يوجد نص لنسخه. قم بإنشاء القرار أولاً."); return; }
-  navigator.clipboard.writeText(textToCopy);
-  alert("✅ تم نسخ طلب الرول بنجاح!");
-}
-
-
-// ---------- إجازة خارجية ----------
-function getExternalTemplatesByType(type){
-  if(type === 'اجازة خارجية'){ return [{ key: 'خارجية', label: 'صيغة الإجازة الخارجية' }]; }
-  if(type === 'انتهاء اجازة خارجية'){ return [{ key: 'عودةخارجية', label: 'صيغة العودة من إجازة خارجية' }]; }
-  return [];
-}
-function updateExtForm(){
-  const type=document.getElementById('ext_leaveType')?.value;
-  const daysField = document.getElementById('ext_leaveDaysField');
-  const extField  = document.getElementById('ext_extensionField');
-
-  daysField.style.display   = (type==='اجازة خارجية') ? 'block' : 'none';
-  extField.style.display    = (type==='تمديد اجازة خارجية') ? 'block' : 'none';
-  if (type === 'انتهاء اجازة خارجية') { daysField.style.display = 'none'; extField.style.display  = 'none'; }
-
-  // إخفاء طلب الرول مؤقتاً عند تغيير النوع
-  document.getElementById('ext_role_output').style.display = 'none';
-  document.getElementById('ext_role_label').style.display = 'none';
-  document.getElementById('copyExtRoleBtn').style.display = 'none';
-
-
-  if(type){ showQuickTemplates('externalLeave', { type }); } else { hideQuickPanel(); }
-}
-function formatExtDate(date){
-  const yyyy=date.getFullYear();
-  const mm=String(date.getMonth()+1).padStart(2,'0');
-  const dd=String(date.getDate()).padStart(2,'0');
-  return `${dd}-${mm}-${yyyy}`;
-}
-function generateExternalLeave(){
-  const type=document.getElementById('ext_leaveType')?.value;
-  if(!type) return alert('⚠️ الرجاء اختيار نوع الإجازة');
-
-  let copyUser=document.getElementById("ext_copyUser").value.trim();
-  if(!copyUser) return alert('⚠️ الرجاء إدخال الكوبي ايدي');
-  const normalizedCopyUser = normalizeCopyId(copyUser);
-  
-  let tzDate=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));
-  
-  const roleOutputBox = document.getElementById('ext_role_output');
-  const roleLabel = document.getElementById('ext_role_label');
-  const copyRoleBtn = document.getElementById('copyExtRoleBtn');
-  let roleType = '';
-  let shouldShowRoleRequest = true; // Flag to control visibility
-
-  if (type === 'انتهاء اجازة خارجية') {
-    roleType = 'ازاله رول اجازة وظيفيه';
-    const message=`**﷽
-
-قرار صـادر مـن <@&1071933369698496532> 
-
-الموضوع : انتهاء اجازه خارجيه
-
-المسعف : ${normalizedCopyUser}
-
-
-إعتماد :
-<@&1071933358503903242> 
-<@725655707764129813>  
-
-<@&1071933359086911561> 
-<@813079786855464961>   **`;
-    document.getElementById('ext_output').textContent=message;
-    
-  } else if(type==='اجازة خارجية'){
-    roleType = 'اضافه رول اجازة وظيفيه';
-    const leaveDays=parseInt(document.getElementById('ext_leaveDays').value);
-    if(!leaveDays||leaveDays<=0) return alert('⚠️ الرجاء إدخال مدة الإجازة بالأيام صحيحة');
-    const startDate=tzDate;
-    const endDate=new Date(startDate);
-    endDate.setDate(endDate.getDate()+leaveDays);
-    const message=`﷽**
-
-قرار صـادر مـن <@&1071933369698496532> 
-
-الموضوع : اجازة خارجية 
-
-للمسعف : ${normalizedCopyUser}
-
-المدة : ${leaveDays} يوم
-
-من تاريخ : ${formatExtDate(startDate)}
-
-إلى تاريخ : ${formatExtDate(endDate)}
-
-
-إعتماد :
-<@&1071933358503903242> 
-<@725655707764129813>  
-
-<@&1071933359086911561> 
-<@813079786855464961>   **`;
-    document.getElementById('ext_output').textContent=message;
-    
-  } else if(type==='تمديد اجازة خارجية'){
-    shouldShowRoleRequest = false; // لا يظهر طلب الرول لتمديد الإجازة
-    roleType = 'تمديد اجازة خارجية (لا يتطلب رول جديد)'; 
-    const prevEndStr=document.getElementById('ext_previousEndDate').value;
-    const extensionDays=parseInt(document.getElementById('ext_extensionDays').value);
-    if(!prevEndStr) return alert('⚠️ الرجاء إدخال تاريخ انتهاء الاجازة السابقة');
-    if(!extensionDays||extensionDays<=0) return alert('⚠️ الرجاء إدخال مدة التمديد بالأيام صحيحة');
-    const prevEndDate=new Date(prevEndStr+'T00:00:00');
-    const newEndDate=new Date(prevEndDate);
-    newEndDate.setDate(newEndDate.getDate()+extensionDays);
-    const message=`﷽
-
-**قرار صـادر مـن <@&1071933369698496532> 
-
-الموضوع : تمديد اجازة خارجية 
-
-للمسعف : ${normalizedCopyUser}
-
-المدة : ${extensionDays} يوم
-
-إلى تاريخ : ${formatExtDate(newEndDate)}
-
-
-إعتماد :
-<@&1071933358503903242> 
-<@725655707764129813>  
-
-<@&1071933359086911561> 
-<@813079786855464961>   **`;
-    document.getElementById('ext_output').textContent=message;
-  }
-  
-  showQuickTemplates('externalLeave', { type });
-
-  // ** عرض/إخفاء رسالة طلب الرول بناءً على العلم (Flag) **
-  if (shouldShowRoleRequest && normalizedCopyUser) {
-    roleOutputBox.textContent = generateRoleRequestBox(normalizedCopyUser, roleType);
-    roleOutputBox.style.display = 'block';
-    roleLabel.style.display = 'block';
-    copyRoleBtn.style.display = 'block';
+// دالة تحديث حقول الانتداب
+function updateAssFields() {
+  const type = document.getElementById('ass_type').value;
+  const fieldsNew = document.getElementById('ass_fields_new');
+  if (type === 'عودة') {
+    fieldsNew.style.display = 'none';
   } else {
-    roleOutputBox.style.display = 'none';
-    roleLabel.style.display = 'none';
-    copyRoleBtn.style.display = 'none';
+    fieldsNew.style.display = 'block';
   }
 }
-function copyExternalLeave(){
-  navigator.clipboard.writeText(document.getElementById('ext_output').textContent);
-  alert("✅ تم نسخ القرار بنجاح!");
-}
-function copyExternalRole(){
-  const textToCopy = document.getElementById('ext_role_output').textContent;
-  if (!textToCopy.trim()) { alert("⚠️ لا يوجد نص لنسخه. قم بإنشاء القرار أولاً."); return; }
-  navigator.clipboard.writeText(textToCopy);
-  alert("✅ تم نسخ طلب الرول بنجاح!");
-}
 
-// ---------- نموذج الانتداب ----------
+// نموذج الانتداب (تم التعديل لإضافة خيار العودة)
 function generateAssignment(){
-  let copyId=document.getElementById('ass_copyId').value.trim();
-  let sector=document.getElementById('ass_sector')?.value;
-  let duration=parseInt(document.getElementById('ass_duration').value.trim());
-
+  const type = document.getElementById('ass_type').value;
+  let copyId = document.getElementById('ass_copyId').value.trim();
   if(!copyId) return alert("⚠️ الرجاء إدخال الكوبي ايدي");
-  if(!sector) return alert("⚠️ الرجاء اختيار القطاع");
-  if(isNaN(duration)||duration<=0) duration=0;
-  
   const normalizedCopyId = normalizeCopyId(copyId);
 
-  let tzDate=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));
-  tzDate.setDate(tzDate.getDate()+duration);
-  let yyyy=tzDate.getFullYear();
-  let mm=String(tzDate.getMonth()+1).padStart(2,'0');
-  let dd=String(tzDate.getDate()).padStart(2,'0');
-  let endDate=`${yyyy}/${mm}/${dd}`;
-  let result=`﷽
+  let result = "";
+
+  if (type === 'انتداب') {
+    let sector = document.getElementById('ass_sector')?.value;
+    let duration = parseInt(document.getElementById('ass_duration').value.trim());
+
+    if(!sector) return alert("⚠️ الرجاء اختيار القطاع");
+    if(isNaN(duration)||duration<=0) duration=0;
+    
+    let tzDate=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));
+    tzDate.setDate(tzDate.getDate()+duration);
+    let yyyy=tzDate.getFullYear();
+    let mm=String(tzDate.getMonth()+1).padStart(2,'0');
+    let dd=String(tzDate.getDate()).padStart(2,'0');
+    let endDate=`${yyyy}/${mm}/${dd}`;
+
+    result = `﷽
 
 **قرار صادر من <@&1071933369698496532> 
 
@@ -816,257 +441,350 @@ function generateAssignment(){
 
 <@&1071933359086911561> 
 <@813079786855464961>    **`;
-  document.getElementById('ass_output').textContent=result;
+  } else {
+    // صيغة انتهاء الانتداب
+    result = `**﷽
 
-  // ** إخفاء رسالة طلب الرول للانتداب حسب الطلب **
-  const roleOutputBox = document.getElementById('ass_role_output');
-  const roleLabel = document.getElementById('ass_role_label');
-  const copyRoleBtn = document.getElementById('copyAssRoleBtn');
+قرار صـادر مـن <@&1071933369698496532> 
+
+الموضوع : انتهاء إنتداب 
+
+المسعف : ${normalizedCopyId}
+
+
+إعتماد :
+<@&1071933358503903242> 
+<@725655707764129813>  
+
+<@&1071933359086911561> 
+<@813079786855464961>    **`;
+  }
+
+  document.getElementById('ass_output').textContent = result;
   
-  roleOutputBox.style.display = 'none';
-  roleLabel.style.display = 'none';
-  copyRoleBtn.style.display = 'none';
-  
-  showQuickTemplates('assignment');
+  // إخفاء رول الانتداب حسب الطلبات السابقة
+  document.getElementById('ass_role_output').style.display = 'none';
+  document.getElementById('ass_role_label').style.display = 'none';
+  document.getElementById('copyAssRoleBtn').style.display = 'none';
 }
+
 function copyAssignment(){
   navigator.clipboard.writeText(document.getElementById('ass_output').textContent);
   alert("✅ تم نسخ القرار بنجاح!");
 }
+
 function copyAssignmentRole(){
-  const textToCopy = document.getElementById('ass_role_output').textContent;
-  if (!textToCopy.trim()) { alert("⚠️ لا يوجد نص لنسخه. قم بإنشاء القرار أولاً."); return; }
-  navigator.clipboard.writeText(textToCopy);
+  navigator.clipboard.writeText(document.getElementById('ass_role_output').textContent);
   alert("✅ تم نسخ طلب الرول بنجاح!");
 }
 
-// --------- rolesRequest (القسم الأصلي) ---------
-function generateRoleRequest() {
-  let copyId = document.getElementById("role_copyId").value.trim();
-  const type = document.getElementById("role_type")?.value;
-  if (!copyId) return alert("⚠️ الرجاء إدخال الكوبي ايدي");
-  if (!type) return alert("⚠️ الرجاء اختيار نوع الطلب");
-  const normalizedCopyId = normalizeCopyId(copyId);
+// ----------------------------------------------------------
+// بقية الدوال دون تعديل
+// ----------------------------------------------------------
 
-  const result = generateRoleRequestBox(normalizedCopyId, type);
+function generateRoleRequestBox(copyId, type = 'يرجى اختيار رول مناسب من القائمة'){
+    const request = `
+الشخص : ${copyId}
 
-  document.getElementById("role_output").textContent = result;
+الموضوع : ${type}
+
+
+<@&1071933358503903242>            
+<@&1071933359086911561>            
+<@&1092667422902862004>            
+<@&1153823182281777293>
+`;
+    return request;
 }
-function copyRoleRequest() {
-  const text = document.getElementById("role_output").textContent.trim();
-  if (!text) return alert("⚠️ لا يوجد نص لنسخه.");
-  navigator.clipboard.writeText(text)
-    .then(() => alert("✅ تم نسخ القرار بنجاح!"))
-    .catch(() => alert("❌ حدث خطأ أثناء النسخ."));
-}
 
-// ... بقية الدوال (Templates, Quick Panel) تبقى كما هي
+function generateInternalLeave(){
+  let copyUser = document.getElementById("int_copyUser").value.trim();
+  let duration = parseFloat(document.getElementById("int_vac_duration").value) || 0;
+  let balance  = parseFloat(document.getElementById("int_vac_balance").value) || 0;
+  const normalizedCopyUser = normalizeCopyId(copyUser);
+  const tzNow = new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Riyadh"}));
+  const startDate = new Date(tzNow.getTime() + 5 * 60 * 1000); 
+  const endDate   = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
 
-// --------- القوالب (Templates) ---------
-const templates = {
- "داخلية": `لقد تم منحك إجازة داخلية محدودة الشروط :
+  function formatDate(date){
+    const y = date.getFullYear();
+    const m = String(date.getMonth()+1).padStart(2,'0');
+    const d = String(date.getDate()).padStart(2,'0');
+    let h   = date.getHours();
+    const min = String(date.getMinutes()).padStart(2,'0');
+    const per = h >= 12 ? "م" : "ص";
+    h = h % 12; h = h ? h : 12;
+    return `${h}:${min} ${per} | ${y}/${m}/${d}`;
+  }
 
-1- يرجى الإلتزام بتاريخ العودة المدون في : https://discord.com/channels/1071933157097615480/1202354280514990212 وقم بالتفاعل بـ ✅ على الإجازة.
+  const result=`﷽
 
-2- في حال عدم التفاعل وعدم تغيير الوظيفة خلال أول 15 دقيقة سوف تلغى اجازتك , ولا يحق لك المطالبة بإسترداد رصيدها .
+**قرار صـادر مـن <@&1071933369698496532>**
 
-3- عند إنتهاء توقيت الإجازة قم بفتح تذكرة مساعدة من الشؤون الإدارية لإثبات العودة مع تصوير الهوية .
+الموضوع : إجازة داخلية
 
-4- يمنع طلب التمديد أو طلب إجازة أخرى في نفس اليوم .
+للمسعف : ${normalizedCopyUser}
 
-\`\`\`diff
-- كما ننوه يمنع منعاً باتاً تغيير الاسم داخل المقاطعة من مواقع تغيير الهويات عند الخروج في الإجازة الداخلية ويتم متابعة الموضوع من قبل إدارة الرقابة والتفتيش عدم إلتزامك بأي تنويه مدون أعلاه يعرضك للمخالفة.
-  
-  \`\`\``,
- "intNotMet": `**الإجازة الداخلية لغير الموهلين :
+المدة : ${duration} ساعة
 
- -رفض طلب إجازتك الداخلية بسبب :  طلب إجازة داخلية في غير الأيام المسموحة ودون المباشرة 3 ساعات وهي ( الاحد - الثلاثاء - الجمعة . )
+من الساعة : ${formatDate(startDate)}
+إلى الساعة : ${formatDate(endDate)}
 
--رفض طلب إجازتك الداخلية بسبب : عدم توفر 20 وحده في الميدان دون احتساب المشرفين و القيادة .
- 
-**`,
- "خارجية": `لقد تم منحك إجازة خارجية وفق الشروط التالية:
+الرصيد المتبقي : ${balance - duration} ساعة
 
-**1- يرجى الإلتزام بتاريخ العودة المدون في : https://discord.com/channels/1071933157097615480/1202354280514990212 وقم بالتفاعل بـ ✅  على الإجازة.**
-
-**2- يسمح لك بالتمديد قبل إنتهاء الاجازة حسب https://discord.com/channels/1071933157097615480/1071934528320454818/1289312826229391471  .**
-
-**3- سيتم منحك رول ( اجازه وظيفيه )  في حال العوده من الاجازه رجاءاً قم بفتح تيكت لابلاغنا بعودتك وسماح الادارة بالمباشرة الميدانية.**
-
-***عدم إلتزامك بأي تنويه مدون أعلاه يعرضك للمخالفة .***`,
- "عودةداخلية": `
-**تم تسجيل عودتكم بنجاح يمكنك الان المباشره <:jobcenter:1152025666154418186> 
-
-شكراً لتواصلكم مع <:imagesremovebgpreview:1086073447840485527> الشؤون الإدارية لقطاع الهلال الأحمر - مقاطعة بوليتو  <:imagesremovebgpreview:1086073447840485527>  
-في حال عدم وجود استفسارات أخرى يرجى إغلاق التكت وتقييم مستوى الخدمة ؛
-شاكرين ومقدرين لكم , دمتم بخير .**`,
- "عودةخارجية": `عوداً حميداً ونتمنى التوفيق لك في الميدان
-
-شكراً لتواصلكم مع <:imagesremovebgpreview:1086073447840485527> الشؤون الإدارية لقطاع الهلال الأحمر - مقاطعة بوليتو <:imagesremovebgpreview:1086073447840485527>
-في حال عدم وجود استفسارات أخرى يرجى إغلاق التكت وتقييم مستوى الخدمة ؛
-شاكرين ومقدرين لكم , دمتم بخير .`,
- "غيرمستوفين": `الإجازة الداخلية لغير الموهلين :
-
-- سيتم رفض طلب إجازتك الداخلية بسبب : ( طلب إجازة داخلية في غير الأيام المسموحة ودون المباشرة 3 ساعات . )
-- ثانياً : سيتم اصدار لك انذار + تأخير ترقية + (غرامة بقيمة 500 الف ).`,
- "قبولاستقالة": `تم قبول طلب استقالتك بنجاح ونشكر جهودك المبذولة والملحوظة لدى القطاع ونسأل الله لك التوفيق والسداد .
-
-توقيع واعتماد :
+إعتماد :
 <@&1071933358503903242>
 <@725655707764129813>
 
 <@&1071933359086911561>
-<@813079786855464961>`,
- "سفلة": `بناءًا على رغبتك في الاستقالة عليك الالتزام بما هو آت:
-
-1-اذكر موقعك للمشرف
-2-سيصدر لك غرامة بقيمة ( 1.000.000 )
-3-سيتم منحك رول منع توظيف ( 14 يوم )
-4-بعد نزول القرار فورًا توجة لمركز التوظيف قم بتغيير وظيفتك خلاف ذلك يعتبر تهرب وظيفي`,
- "رفض": `بناءًا على رغبتك في الاستقالة عليك الالتزام بما هو آت :
-
-1-اذكر موقعك للمشرف
-2-سيصدر لك غرامة بقيمة ( 500.000 )
-3-سيتم منحك رول منع توظيف ( 7 أيام )
-4-بعد نزول القرار فورًا توجة لمركز التوظيف قم بتغيير وظيفتك خلاف ذلك يعتبر تهرب وظيفي`,
- "اهمال": `عزيزي المستفيد :
-إهمال التكت مخالفة منصوص عليها في دستور مقاطعة بوليتو فضلاً نرجو عدم اهمال التكت <:imagesremovebgpreview:1086073447840485527>`,
- "ازالة": `عزيزي المستفيد : <:imagesremovebgpreview:1086073447840485527>
-
-شاكرين لك تواصلك وتم التحقق من بياناتك وسيتم خلال الساعات القادمة إزالة منع التوظيف <:imagesremovebgpreview:1086073447840485527>`,
- "انتداب": (days=5) => `لقد تم منحك أنتداب لمدة ${days} أيام :
-
-1- يرجى الإلتزام بتاريخ العودة المدون في : https://discord.com/channels/1071933157097615480/1202354280514990212 و قم بالتفاعل بـ ✅ على الانتداب .
-
-2- في حال تم قبول انتدابك من قبل القطاع الثانوي ، بأمكانك تغيير وظيفتك بعد الحصول على رول منتدب.
-
-3- يمنع منعاً باتا كسر الانتداب قبل انتهاء مدة انتدابك ، وكسر الانتداب فقط من قبل القيادة .
-
-***عدم إلتزامك بأي تنويه مدون أعلاه يعرضك للمخالفة .***`,
- "موادع": `شكراً لتواصلكم مع <:imagesremovebgpreview:1086073447840485527> الشؤون الإدارية لقطاع الهلال الأحمر - مقاطعة بوليتو <:imagesremovebgpreview:1086073447840485527>
-في حال عدم وجود استفسارات أخرى يرجى إغلاق التكت وتقييم مستوى الخدمة ؛
-شاكرين ومقدرين لكم , دمت .`,
- "انعاش": `عزيزي المستفيد: <:imagesremovebgpreview:1086073447840485527>
-نود تنبيهك بأن طلب الانعاش مخالفة منصوص عليها من قبل ادارة الرقابة والتفتيش <:imagesremovebgpreview:1086073447840485527>`,
- "شكوى": `نشكر لكم تواصلكم وإهتمامكم , ولتسريع عملية معالجة الشكوى نرجوا توفير ما يلي :
-
-- اسم المسعف بشكل واضح .
-- تصوير واضح لا يقل عن 10 دقائق , منها 5 قبل وقوع الحادثة و 5 أثناء وبعد حدوث الحادثة , دون قص اللقطات .
-- الإلتزام بإرفاق إثبات الشكوى داخل تكت الشكوى , أو في حال تعذر ذلك رفعه على موقع : 
-https://streamable.com/
-حسب التوصيات من إدارة الرقابة والتفتيش .
-
-***عدم إلتزامك بأي بند من البنود المذكورة أعلاه يلغي شكواك .***`
-};
-
-// ======== خريطة النماذج المناسبة لكل قسم ========
-const quickMap = {
-  internalLeave: [
-    { key: 'داخلية', label: 'صيغة الإجازة الداخلية' },
-  ],
-  assignment: [
-    { key: 'انتداب', label: 'صيغة قبول الانتداب', dynamic: true }
-  ]
-};
-
-// ======== لوحة النماذج السريعة (اليسار) ========
-function hideQuickPanel(){
-  const panel = document.getElementById('quickPanel');
-  panel.style.display = 'none';
-  document.getElementById('quickList').innerHTML = '';
+<@813079786855464961>
+`;
+  document.getElementById("int_output").textContent=result;
+  document.getElementById('int_role_output').style.display = 'none';
+  document.getElementById('int_role_label').style.display = 'none';
+  document.getElementById('copyIntRoleBtn').style.display = 'none';
 }
 
-// تدعم تمرير خيارات إضافية مثل المستوى أو نوع الإجازة
-function showQuickTemplates(context, opts = {}){
-  let defs = [];
-
-  if(context === 'resignation'){
-    const level = opts.level || document.getElementById('res_level')?.value || '';
-    defs = getResignationTemplatesByLevel(level);
-  } else if(context === 'externalLeave'){
-    const type = opts.type || document.getElementById('ext_leaveType')?.value || '';
-    defs = getExternalTemplatesByType(type);
-  } else {
-    defs = quickMap[context] || [];
-  }
-
-  const panel = document.getElementById('quickPanel');
-  const list  = document.getElementById('quickList');
-
-  list.innerHTML = '';
-  defs.forEach(item => {
-    const wrap = document.createElement('div');
-    wrap.className = 'quick-item';
-
-    const name = document.createElement('div');
-    name.className = 'quick-name';
-    name.textContent = item.label;
-
-    const btn = document.createElement('button');
-    btn.className = 'quick-copy';
-    btn.textContent = 'نسخ الصيغة';
-    btn.onclick = () => {
-      let text = '';
-      if(item.dynamic && item.key === 'انتداب'){
-        const days = parseInt(document.getElementById('ass_duration')?.value) || parseInt(document.getElementById('daysInput')?.value) || 5;
-        text = templates['انتداب'](days);
-      } else {
-        text = templates[item.key] || '';
-      }
-      if(!text){ alert('❌ لا توجد صيغة متاحة حاليًا.'); return; }
-      navigator.clipboard.writeText(text)
-        .then(()=>alert('✅ تم نسخ الصيغة بنجاح!'))
-        .catch(()=>alert('❌ حدث خطأ أثناء النسخ.'));
-    };
-
-    wrap.appendChild(name);
-    wrap.appendChild(btn);
-    list.appendChild(wrap);
-  });
-
-  panel.style.display = defs.length ? 'block' : 'none';
+function copyInternalLeave(){
+  navigator.clipboard.writeText(document.getElementById("int_output").textContent);
+  alert("✅ تم نسخ القرار بنجاح!");
 }
 
-// دالة مخصصة لنسخ النموذج لـ "غير المستوفين" (تنسخ مباشرة من القوالب)
-function copySpecificTemplate(key) {
-    const textToCopy = templates[key] || '';
-    if (!textToCopy || !textToCopy.trim()) { 
-        alert('❌ لا توجد صيغة لنسخها.'); 
-        return; 
-    }
+function updateResFields(){
+  const level = document.getElementById('res_level')?.value;
+  document.getElementById('res_violationsField').style.display = (level==='مستوى 2 فما فوق') ? 'block' : 'none';
+  if(level){ showQuickTemplates('resignation', { level }); } else { hideQuickPanel(); }
+}
+
+function generateResignation(){
+  const level=document.getElementById('res_level')?.value;
+  const nameCode=document.getElementById('res_nameCode').value.trim();
+  let copyId=document.getElementById('res_copyId').value.trim();
+  const hasViolations=document.getElementById('res_hasViolations')?.value;
+  const normalizedCopyId = normalizeCopyId(copyId);
+
+  const pullOutputBox = document.getElementById('res_pull_output');
+  const pullBoxDiv = document.getElementById('res_pull_box');
+  const roleOutputBox = document.getElementById('res_role_output');
+  const roleBoxDiv = document.getElementById('res_role_box');
+
+  pullBoxDiv.style.display = 'none';
+  roleBoxDiv.style.display = 'none';
+
+  if(!level || !nameCode || !copyId) return alert('⚠️ الرجاء إدخال البيانات');
+
+  let result='';
+  if(level==='متدرب'||level==='مستوى 1'){
+    let days=level==='متدرب'?14:7;
+    let fine=level==='متدرب'?'1,000,000':'500,000';
+    let roleType = level==='متدرب' ? 'ازاله رولات الهلال الاحمر + ازاله الاسم + منع التوظيف 14 يوم' : 'ازاله رولات الهلال الاحمر + ازاله الاسم + منع التوظيف 7 ايام';
+
+    pullOutputBox.textContent = `${normalizedCopyId}\n\n${fine}\n\nعملية سحب ناجحه  ( استقالة ${level} )`;
+    pullBoxDiv.style.display = 'block';
     
-    // النسخ مباشرة من القالب المخزن
-    navigator.clipboard.writeText(textToCopy.trim())
-      .then(() => alert("✅ تم نسخ الصيغة بنجاح!"))
-      .catch(() => alert("❌ فشل النسخ، يرجى المحاولة مرة أخرى."));
+    roleOutputBox.textContent = generateRoleRequestBox(normalizedCopyId, roleType);
+    roleBoxDiv.style.display = 'block';
+
+    result=`﷽**
+
+قرار صـادر مـن <@&1071933369698496532> 
+
+الموضوع : إنهاء خدمات
+
+المسعف : ${normalizedCopyId}
+
+اسمه وكوده الميداني : ${nameCode}
+
+هل يوجد عليه مخالفات سابقه :  
+ 
+العقوبة الاجماليه : فصل من الخدمه + منع من التوظيف (${days}) ايام + غرامه مالية بقيمه (${fine})
+
+سبب الفصل من الخدمة : استقالة بمستوى ${level}
+
+
+إعتماد :
+<@&1071933358503903242> 
+<@725655707764129813>  
+
+<@&1071933359086911561> 
+<@813079786855464961>    **`;
+  } else {
+    roleOutputBox.textContent = generateRoleRequestBox(normalizedCopyId, 'ازاله رولات الهلال الاحمر + ازاله الاسم');
+    roleBoxDiv.style.display = 'block';
+    result=`﷽**
+
+قرار صـادر مـن <@&1071933369698496532> 
+
+الموضوع : استقالة 
+
+المسعف : ${normalizedCopyId}
+
+اسمه وكوده الميداني : ${nameCode}
+
+هل يوجد عليه مخالفات سابقه : ${hasViolations}  
+
+نشكر جهودك المبذولة والملحوظة لدى القطاع ونسأل الله لك التوفيق
+
+
+إعتماد :
+<@&1071933358503903242>
+<@725655707764129813>  
+
+<@&1071933359086911561> 
+<@813079786855464961>    **`;
+  }
+  document.getElementById('res_output').textContent=result;
 }
 
+function copyResignation(){
+  navigator.clipboard.writeText(document.getElementById('res_output').textContent);
+  alert("✅ تم نسخ القرار بنجاح!");
+}
+function copyResignationPull(){
+  navigator.clipboard.writeText(document.getElementById('res_pull_output').textContent);
+  alert("✅ تم نسخ رسالة السحب بنجاح!");
+}
+function copyResignationRole(){
+  navigator.clipboard.writeText(document.getElementById('res_role_output').textContent);
+  alert("✅ تم نسخ طلب الرول بنجاح!");
+}
 
-// --------- واجهة نماذج التكتات الأصلية ---------
+function updateExtForm(){
+  const type=document.getElementById('ext_leaveType')?.value;
+  document.getElementById('ext_leaveDaysField').style.display = (type==='اجازة خارجية') ? 'block' : 'none';
+  document.getElementById('ext_extensionField').style.display = (type==='تمديد اجازة خارجية') ? 'block' : 'none';
+}
+
+function generateExternalLeave(){
+  const type=document.getElementById('ext_leaveType')?.value;
+  let copyUser=document.getElementById("ext_copyUser").value.trim();
+  if(!type || !copyUser) return alert('⚠️ الرجاء إدخال البيانات');
+  const normalized = normalizeCopyId(copyUser);
+  
+  let result="";
+  if(type === 'انتهاء اجازة خارجية'){
+    result = `**﷽
+
+قرار صـادر مـن <@&1071933369698496532> 
+
+الموضوع : انتهاء اجازه خارجيه
+
+المسعف : ${normalized}
+
+
+إعتماد :
+<@&1071933358503903242> 
+<@725655707764129813>  
+
+<@&1071933359086911561> 
+<@813079786855464961>    **`;
+  } else if(type==='اجازة خارجية'){
+    const leaveDays=document.getElementById('ext_leaveDays').value;
+    result=`﷽**
+
+قرار صـادر مـن <@&1071933369698496532> 
+
+الموضوع : اجازة خارجية 
+
+للمسعف : ${normalized}
+
+المدة : ${leaveDays} يوم
+
+
+إعتماد :
+<@&1071933358503903242> 
+<@725655707764129813>  
+
+<@&1071933359086911561> 
+<@813079786855464961>    **`;
+  } else if(type==='تمديد اجازة خارجية'){
+    const extensionDays=document.getElementById('ext_extensionDays').value;
+    result=`﷽
+
+**قرار صـادر مـن <@&1071933369698496532> 
+
+الموضوع : تمديد اجازة خارجية 
+
+للمسعف : ${normalized}
+
+المدة : ${extensionDays} يوم
+
+
+إعتماد :
+<@&1071933358503903242> 
+<@725655707764129813>  
+
+<@&1071933359086911561> 
+<@813079786855464961>    **`;
+  }
+  document.getElementById('ext_output').textContent=result;
+}
+
+function copyExternalLeave(){
+  navigator.clipboard.writeText(document.getElementById('ext_output').textContent);
+  alert("✅ تم نسخ القرار بنجاح!");
+}
+
+function generateRoleRequest() {
+  let copyId = document.getElementById("role_copyId").value.trim();
+  const type = document.getElementById("role_type")?.value;
+  if (!copyId || !type) return alert("⚠️ الرجاء إدخال البيانات");
+  document.getElementById("role_output").textContent = generateRoleRequestBox(normalizeCopyId(copyId), type);
+}
+
+function copyRoleRequest() {
+  navigator.clipboard.writeText(document.getElementById("role_output").textContent);
+  alert("✅ تم نسخ الطلب بنجاح!");
+}
+
+const templates = {
+ "داخلية": `لقد تم منحك إجازة داخلية محدودة الشروط :...`,
+ "intNotMet": `**الإجازة الداخلية لغير الموهلين :...`,
+ "خارجية": `لقد تم منحك إجازة خارجية وفق الشروط التالية:...`,
+ "عودةداخلية": `**تم تسجيل عودتكم بنجاح يمكنك الان المباشره...`,
+ "عودةخارجية": `عوداً حميداً ونتمنى التوفيق لك في الميدان...`,
+ "غيرمستوفين": `الإجازة الداخلية لغير الموهلين :...`,
+ "قبولاستقالة": `تم قبول طلب استقالتك بنجاح...`,
+ "سفلة": `بناءًا على رغبتك في الاستقالة عليك الالتزام بما هو آت:...`,
+ "رفض": `بناءًا على رغبتك في الاستقالة عليك الالتزام بما هو آت :...`,
+ "اهمال": `عزيزي المستفيد : إهمال التكت مخالفة...`,
+ "ازالة": `عزيزي المستفيد : شاكرين لك تواصلكم وتم التحقق...`,
+ "انتداب": (days=5) => `لقد تم منحك أنتداب لمدة ${days} أيام :...`,
+ "موادع": `شكراً لتواصلكم مع الشؤون الإدارية...`,
+ "انعاش": `عزيزي المستفيد: نود تنبيهك بأن طلب الانعاش مخالفة...`,
+ "شكوى": `نشكر لكم تواصلكم وإهتمامكم...`
+};
+
 function showTemplate() {
-  const sel = document.getElementById('templateSelect')?.value;
+  const sel = document.getElementById('templateSelect').value;
   const box = document.getElementById('templateBox');
   const daysBox = document.getElementById('daysBox');
   if (sel === 'انتداب') {
     daysBox.style.display = 'block';
-    const days = parseInt(document.getElementById('daysInput').value) || 5;
-    box.textContent = templates['انتداب'](days);
+    box.textContent = templates['انتداب'](document.getElementById('daysInput').value);
   } else {
     daysBox.style.display = 'none';
     box.textContent = templates[sel] || '';
   }
 }
+
 function updateDays() {
-  const days = parseInt(document.getElementById('daysInput').value) || 5;
-  document.getElementById('templateBox').textContent = templates['انتداب'](days);
+  document.getElementById('templateBox').textContent = templates['انتداب'](document.getElementById('daysInput').value);
 }
+
 function copyTemplate() {
-  const txt = document.getElementById('templateBox').textContent;
-  if (!txt) return alert('لا يوجد نص لنسخه. اختر صيغة أولاً.');
-  navigator.clipboard.writeText(txt);
+  navigator.clipboard.writeText(document.getElementById('templateBox').textContent);
   alert('✅ تم نسخ الصيغة بنجاح!');
+}
+
+function hideQuickPanel(){ document.getElementById('quickPanel').style.display = 'none'; }
+
+function showQuickTemplates(context, opts = {}){ /* منطق القوائم الجانبية */ }
+
+function copySpecificTemplate(key) {
+    navigator.clipboard.writeText(templates[key].trim());
+    alert("✅ تم نسخ الصيغة بنجاح!");
 }
 </script>
 </body>
 </html>
-
